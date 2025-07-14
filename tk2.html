@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ticket Seat Map</title>
+  <style>
+    /* Container for entire ticket module */
+    .ticket-container {
+      display: flex;
+      align-items: flex-start;
+      /* align top of seat map and info panel */
+      justify-content: center;
+      margin: 20px;
+    }
+
+    /* Seat map area (clusters container) */
+    .seat-map-container {
+      position: relative;
+      /* 為內部 .section 絕對定位提供參考基準 */
+      flex-shrink: 0;
+      /* 防止被壓縮 */
+      width: 800px;
+      /* 固定寬度，視圖區大小 */
+      height: 600px;
+      /* 固定高度，視圖區大小 */
+      overflow: hidden;
+      /* 隱藏座位溢出區塊，不顯示 scrollbar */
+
+      /* 背景圖片設定 */
+      background-image: url(./img/lolpark.jpg);
+      /* 替換成你正確的背景圖路徑 */
+      background-size: contain;
+      /* 符合比例完整顯示背景圖 */
+      background-repeat: no-repeat;
+      background-position: left top;
+
+      display: block;
+      /* 不要 flex，讓內部 section 以絕對位置排列 */
+    }
+
+    /* Left and right cluster containers */
+    /* .cluster-left,
+    .cluster-right {
+      display: flex;
+      flex-direction: column;
+    } */
+
+    /* .cluster-left {
+      align-items: flex-end;
+    }
+
+    /* align sections to right edge (stage side) */
+    /* .cluster-right {
+      align-items: flex-start;
+    } */
+
+    /* align sections to left edge (stage side) */
+    /* Each section (group of rows of seats) */
+    .section {
+      /* optional styling for section grouping if needed */
+    }
+
+    /* Each row of seats */
+    .row {
+      display: flex;
+      flex-direction: row;
+      /* gap between seats in a row */
+      gap: 4px;
+      /* We could also add margin between rows below if needed */
+    }
+
+    /*..............................section............................*/
+    .section .row {
+      margin-bottom: 3.5px;
+      /* 或 padding-bottom: 4px; */
+    }
+
+    .section-A {
+      position: absolute;
+      top: 105px;
+      left: 90px;
+    }
+
+    .section-B {
+      position: absolute;
+      top: 220px;
+      left: 90px;
+    }
+
+    .section-B1 {
+      position: absolute;
+      top: 297px;
+      left: 90px;
+    }
+
+    .section-C {
+      position: absolute;
+      top: 387px;
+      left: 169px;
+      rotate: -63deg;
+    }
+
+    .section-C1 {
+      position: absolute;
+      top: 422.2px;
+      left: 238px;
+      rotate: -63.5deg;
+    }
+
+    .section-D {
+      position: absolute;
+      top: 410px;
+      left: 381px;
+      rotate: -90deg;
+    }
+
+    .section-E {
+      position: absolute;
+      top: 360px;
+      left: 531px;
+      rotate: -116deg;
+    }
+
+    .section-F {
+      position: absolute;
+      top: 206px;
+      left: 604px;
+      rotate: -180.2deg;
+    }
+
+    .section-G {
+      position: absolute;
+      top: 102px;
+      left: 610px;
+      rotate: -180deg;
+    }
+
+    /* Seat styling */
+    .seat {
+      width: 7px;
+      height: 7px;
+      border: 1px solid #333;
+      cursor: pointer;
+    }
+
+    .seat.available {
+      background: #fff;
+    }
+
+    .seat.sold {
+      background: #aaa;
+      cursor: default;
+    }
+
+    .seat.selected {
+      background: #9c27b0;
+    }
+
+    /* Selection info panel */
+    .selection-info {
+      margin-left: 0px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      min-width: 200px;
+      background: #f9f9f9;
+    }
+
+    .selection-info h3 {
+      margin-top: 0;
+      font-size: 1.1em;
+    }
+
+    .selected-seats {
+      margin-bottom: 10px;
+    }
+
+    .selected-seats p,
+    .selected-seats li {
+      margin: 4px 0;
+    }
+
+    .selected-seats .none-selected {
+      color: #666;
+    }
+
+    .summary {
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+    .next-btn {
+      background: #9c27b0;
+      color: #fff;
+      border: none;
+      padding: 8px 16px;
+      font-size: 1em;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .next-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+
+    .gap {
+      width: 8px;
+      /* 跟 .seat 的寬度相同或略寬 */
+      height: 8px;
+    }
+
+    .gap2 {
+      width: 21.5px;
+      /* 跟 .seat 的寬度相同或略寬 */
+      height: 8px;
+    }
+
+    /* Responsive layout: stack on smaller screens */
+    @media (max-width: 768px) {
+      .ticket-container {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .seat-map-container {
+        width: 100%;
+        margin-bottom: 20px;
+      }
+
+      .selection-info {
+        margin-left: 0;
+        width: 100%;
+      }
+    }
+
+    .seat-map-container {
+      background-image: url(./img/lolpark.jpg);
+      /* 圖片路徑依實際放置而定 */
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* } */
+  </style>
+</head>
+
+<body>
+  <div class="ticket-container">
+    <div class="seat-map-container">
+
+      <div class="section section-A" data-section="A">
+        <div class="row" data-row="1">
+          <div class="seat available" data-section="A" data-row="1" data-seat="8"></div>
+          <div class="seat available" data-section="A" data-row="1" data-seat="7"></div>
+          <div class="seat available" data-section="A" data-row="1" data-seat="6"></div>
+          <div class="seat available" data-section="A" data-row="1" data-seat="5"></div>
+          <div class="seat available" data-section="A" data-row="1" data-seat="4"></div>
+          <div class="seat available" data-section="A" data-row="1" data-seat="3"></div>
+          <div class="seat available" data-section="A" data-row="1" data-seat="2"></div>
+          <div class="seat available" data-section="A" data-row="1" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="2">
+          <div class="seat available" data-section="A" data-row="2" data-seat="8"></div>
+          <div class="seat available" data-section="A" data-row="2" data-seat="7"></div>
+          <div class="seat available" data-section="A" data-row="2" data-seat="6"></div>
+          <div class="seat available" data-section="A" data-row="2" data-seat="5"></div>
+          <div class="seat available" data-section="A" data-row="2" data-seat="4"></div>
+          <div class="seat available" data-section="A" data-row="2" data-seat="3"></div>
+          <div class="seat sold" data-section="A" data-row="2" data-seat="2"></div>
+          <div class="seat available" data-section="A" data-row="2" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="3">
+          <div class="seat available" data-section="A" data-row="3" data-seat="8"></div>
+          <div class="seat available" data-section="A" data-row="3" data-seat="7"></div>
+          <div class="seat available" data-section="A" data-row="3" data-seat="6"></div>
+          <div class="seat sold" data-section="A" data-row="3" data-seat="5"></div>
+          <div class="seat available" data-section="A" data-row="3" data-seat="4"></div>
+          <div class="seat available" data-section="A" data-row="3" data-seat="3"></div>
+          <div class="seat available" data-section="A" data-row="3" data-seat="2"></div>
+          <div class="seat available" data-section="A" data-row="3" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="4">
+          <div class="seat available" data-section="A" data-row="4" data-seat="8"></div>
+          <div class="seat available" data-section="A" data-row="4" data-seat="7"></div>
+          <div class="seat available" data-section="A" data-row="4" data-seat="6"></div>
+          <div class="seat available" data-section="A" data-row="4" data-seat="5"></div>
+          <div class="seat available" data-section="A" data-row="4" data-seat="4"></div>
+          <div class="seat available" data-section="A" data-row="4" data-seat="3"></div>
+          <div class="seat sold" data-section="A" data-row="4" data-seat="2"></div>
+          <div class="seat available" data-section="A" data-row="4" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="5">
+          <div class="seat available" data-section="A" data-row="5" data-seat="8"></div>
+          <div class="seat available" data-section="A" data-row="5" data-seat="7"></div>
+          <div class="seat available" data-section="A" data-row="5" data-seat="6"></div>
+          <div class="seat available" data-section="A" data-row="5" data-seat="5"></div>
+          <div class="seat available" data-section="A" data-row="5" data-seat="4"></div>
+          <div class="seat available" data-section="A" data-row="5" data-seat="3"></div>
+          <div class="seat sold" data-section="A" data-row="5" data-seat="2"></div>
+          <div class="seat available" data-section="A" data-row="5" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="6">
+          <div class="seat available" data-section="A" data-row="6" data-seat="8"></div>
+          <div class="seat available" data-section="A" data-row="6" data-seat="7"></div>
+          <div class="seat available" data-section="A" data-row="6" data-seat="6"></div>
+          <div class="seat available" data-section="A" data-row="6" data-seat="5"></div>
+          <div class="seat sold" data-section="A" data-row="6" data-seat="4"></div>
+          <div class="seat available" data-section="A" data-row="6" data-seat="3"></div>
+          <div class="seat available" data-section="A" data-row="6" data-seat="2"></div>
+          <div class="seat available" data-section="A" data-row="6" data-seat="1"></div>
+        </div>
+      </div>
+
+      <div class="section section-B" data-section="B">
+        <div class="row" data-row="1">
+          <div class="seat available" data-section="B" data-row="1" data-seat="8"></div>
+          <div class="seat available" data-section="B" data-row="1" data-seat="7"></div>
+          <div class="seat available" data-section="B" data-row="1" data-seat="6"></div>
+          <div class="seat available" data-section="B" data-row="1" data-seat="5"></div>
+          <div class="seat sold" data-section="B" data-row="1" data-seat="4"></div>
+          <div class="seat available" data-section="B" data-row="1" data-seat="3"></div>
+          <div class="seat available" data-section="B" data-row="1" data-seat="2"></div>
+          <div class="seat available" data-section="B" data-row="1" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="2">
+          <div class="seat available" data-section="B" data-row="2" data-seat="8"></div>
+          <div class="seat sold" data-section="B" data-row="2" data-seat="7"></div>
+          <div class="seat available" data-section="B" data-row="2" data-seat="6"></div>
+          <div class="seat available" data-section="B" data-row="2" data-seat="5"></div>
+          <div class="seat available" data-section="B" data-row="2" data-seat="4"></div>
+          <div class="seat available" data-section="B" data-row="2" data-seat="3"></div>
+          <div class="seat available" data-section="B" data-row="2" data-seat="2"></div>
+          <div class="seat available" data-section="B" data-row="2" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="3">
+          <div class="seat available" data-section="B" data-row="3" data-seat="8"></div>
+          <div class="seat available" data-section="B" data-row="3" data-seat="7"></div>
+          <div class="seat sold" data-section="B" data-row="3" data-seat="6"></div>
+          <div class="seat available" data-section="B" data-row="3" data-seat="5"></div>
+          <div class="seat available" data-section="B" data-row="3" data-seat="4"></div>
+          <div class="seat available" data-section="B" data-row="3" data-seat="3"></div>
+          <div class="seat available" data-section="B" data-row="3" data-seat="2"></div>
+          <div class="seat available" data-section="B" data-row="3" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="4">
+          <div class="seat available" data-section="B" data-row="4" data-seat="8"></div>
+          <div class="seat available" data-section="B" data-row="4" data-seat="7"></div>
+          <div class="seat sold" data-section="B" data-row="4" data-seat="6"></div>
+          <div class="seat available" data-section="B" data-row="4" data-seat="5"></div>
+          <div class="seat available" data-section="B" data-row="4" data-seat="4"></div>
+          <div class="seat available" data-section="B" data-row="4" data-seat="3"></div>
+          <div class="seat available" data-section="B" data-row="4" data-seat="2"></div>
+          <div class="seat sold" data-section="B" data-row="4" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="5">
+          <div class="seat available" data-section="B" data-row="5" data-seat="8"></div>
+          <div class="seat available" data-section="B" data-row="5" data-seat="7"></div>
+          <div class="seat sold" data-section="B" data-row="5" data-seat="6"></div>
+          <div class="seat available" data-section="B" data-row="5" data-seat="5"></div>
+          <div class="seat available" data-section="B" data-row="5" data-seat="4"></div>
+          <div class="seat available" data-section="B" data-row="5" data-seat="3"></div>
+          <div class="seat available" data-section="B" data-row="5" data-seat="2"></div>
+          <div class="seat available" data-section="B" data-row="5" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="6">
+          <div class="seat available" data-section="B" data-row="6" data-seat="8"></div>
+          <div class="seat sold" data-section="B" data-row="6" data-seat="7"></div>
+          <div class="seat available" data-section="B" data-row="6" data-seat="6"></div>
+          <div class="seat available" data-section="B" data-row="6" data-seat="5"></div>
+          <div class="seat available" data-section="B" data-row="6" data-seat="4"></div>
+          <div class="seat available" data-section="B" data-row="6" data-seat="3"></div>
+          <div class="seat available" data-section="B" data-row="6" data-seat="2"></div>
+          <div class="seat sold" data-section="B" data-row="6" data-seat="1"></div>
+        </div>
+      </div>
+      <div class="section section-B1" data-section="B">
+        <div class="row" data-row="7">
+          <div class="seat available" data-section="B" data-row="7" data-seat="8"></div>
+          <div class="seat available" data-section="B" data-row="7" data-seat="7"></div>
+          <div class="seat available" data-section="B" data-row="7" data-seat="6"></div>
+          <div class="seat available" data-section="B" data-row="7" data-seat="5"></div>
+          <div class="seat sold" data-section="B" data-row="7" data-seat="4"></div>
+          <div class="seat available" data-section="B" data-row="7" data-seat="3"></div>
+        </div>
+        <div class="row" data-row="8">
+          <div class="seat available" data-section="B" data-row="8" data-seat="8"></div>
+          <div class="gap"></div>
+          <div class="seat available" data-section="B" data-row="8" data-seat="6"></div>
+          <div class="seat available" data-section="B" data-row="8" data-seat="5"></div>
+          <div class="seat sold" data-section="B" data-row="8" data-seat="4"></div>
+        </div>
+        <div class="row" data-row="9">
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="seat available" data-section="B" data-row="9" data-seat="6"></div>
+          <div class="seat available" data-section="B" data-row="9" data-seat="5"></div>
+        </div>
+      </div>
+
+      <div class="section section-C" data-section="C">
+        <div class="row" data-row="1">
+          <div class="seat available" data-section="C" data-row="1" data-seat="8"></div>
+          <div class="seat available" data-section="C" data-row="1" data-seat="7"></div>
+          <div class="seat available" data-section="C" data-row="1" data-seat="6"></div>
+          <div class="seat sold" data-section="C" data-row="1" data-seat="5"></div>
+          <div class="seat available" data-section="C" data-row="1" data-seat="4"></div>
+          <div class="seat available" data-section="C" data-row="1" data-seat="3"></div>
+          <div class="seat available" data-section="C" data-row="1" data-seat="2"></div>
+          <div class="seat available" data-section="C" data-row="1" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="2">
+          <div class="seat available" data-section="C" data-row="2" data-seat="8"></div>
+          <div class="seat available" data-section="C" data-row="2" data-seat="7"></div>
+          <div class="seat available" data-section="C" data-row="2" data-seat="6"></div>
+          <div class="seat available" data-section="C" data-row="2" data-seat="5"></div>
+          <div class="seat available" data-section="C" data-row="2" data-seat="4"></div>
+          <div class="seat available" data-section="C" data-row="2" data-seat="3"></div>
+          <div class="seat available" data-section="C" data-row="2" data-seat="2"></div>
+          <div class="seat sold" data-section="C" data-row="2" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="3">
+          <div class="seat sold" data-section="C" data-row="3" data-seat="8"></div>
+          <div class="seat available" data-section="C" data-row="3" data-seat="7"></div>
+          <div class="seat available" data-section="C" data-row="3" data-seat="6"></div>
+          <div class="seat available" data-section="C" data-row="3" data-seat="5"></div>
+          <div class="seat available" data-section="C" data-row="3" data-seat="4"></div>
+          <div class="seat available" data-section="C" data-row="3" data-seat="3"></div>
+          <div class="seat sold" data-section="C" data-row="3" data-seat="2"></div>
+          <div class="seat available" data-section="C" data-row="3" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="4">
+          <div class="seat available" data-section="C" data-row="4" data-seat="8"></div>
+          <div class="seat available" data-section="C" data-row="4" data-seat="7"></div>
+          <div class="seat available" data-section="C" data-row="4" data-seat="6"></div>
+          <div class="seat available" data-section="C" data-row="4" data-seat="5"></div>
+          <div class="seat available" data-section="C" data-row="4" data-seat="4"></div>
+          <div class="seat available" data-section="C" data-row="4" data-seat="3"></div>
+          <div class="seat available" data-section="C" data-row="4" data-seat="2"></div>
+          <div class="seat available" data-section="C" data-row="4" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="5">
+          <div class="seat available" data-section="C" data-row="5" data-seat="8"></div>
+          <div class="seat available" data-section="C" data-row="5" data-seat="7"></div>
+          <div class="seat available" data-section="C" data-row="5" data-seat="6"></div>
+          <div class="seat available" data-section="C" data-row="5" data-seat="5"></div>
+          <div class="seat available" data-section="C" data-row="5" data-seat="4"></div>
+          <div class="seat available" data-section="C" data-row="5" data-seat="3"></div>
+          <div class="seat available" data-section="C" data-row="5" data-seat="2"></div>
+          <div class="seat sold" data-section="C" data-row="5" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="6">
+          <div class="seat available" data-section="C" data-row="6" data-seat="8"></div>
+          <div class="seat available" data-section="C" data-row="6" data-seat="7"></div>
+          <div class="seat available" data-section="C" data-row="6" data-seat="6"></div>
+          <div class="seat available" data-section="C" data-row="6" data-seat="5"></div>
+          <div class="seat available" data-section="C" data-row="6" data-seat="4"></div>
+          <div class="seat available" data-section="C" data-row="6" data-seat="3"></div>
+          <div class="seat available" data-section="C" data-row="6" data-seat="2"></div>
+          <div class="seat available" data-section="C" data-row="6" data-seat="1"></div>
+        </div>
+      </div>
+
+      <div class="section section-C1" data-section="A">
+        <div class="row" data-row="7">
+          <div class="seat available" data-section="C" data-row="7" data-seat="8"></div>
+          <div class="seat available" data-section="C" data-row="7" data-seat="7"></div>
+          <div class="seat available" data-section="C" data-row="7" data-seat="6"></div>
+          <div class="seat sold" data-section="C" data-row="7" data-seat="5"></div>
+          <div class="seat available" data-section="C" data-row="7" data-seat="4"></div>
+          <div class="seat available" data-section="C" data-row="7" data-seat="3"></div>
+          <div class="seat available" data-section="C" data-row="7" data-seat="2"></div>
+          <div class="gap"></div>
+        </div>
+        <div class="row" data-row="8">
+          <div class="seat sold" data-section="C" data-row="8" data-seat="8"></div>
+          <div class="seat available" data-section="C" data-row="8" data-seat="7"></div>
+          <div class="seat available" data-section="C" data-row="8" data-seat="6"></div>
+          <div class="seat available" data-section="C" data-row="8" data-seat="5"></div>
+          <div class="seat available" data-section="C" data-row="8" data-seat="4"></div>
+          <div class="seat available" data-section="C" data-row="8" data-seat="3"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+        </div>
+        <div class="row" data-row="9">
+          <div class="seat available" data-section="C" data-row="9" data-seat="8"></div>
+          <div class="seat available" data-section="C" data-row="9" data-seat="7"></div>
+          <div class="seat available" data-section="C" data-row="9" data-seat="6"></div>
+          <div class="seat available" data-section="C" data-row="9" data-seat="5"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+        </div>
+        <div class="row" data-row="10">
+          <div class="seat available" data-section="C" data-row="10" data-seat="8"></div>
+          <div class="seat available" data-section="C" data-row="10" data-seat="7"></div>
+          <div class="seat available" data-section="C" data-row="10" data-seat="6"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+        </div>
+        <div class="row" data-row="11">
+          <div class="seat available" data-section="C" data-row="11" data-seat="8"></div>
+          <div class="seat available" data-section="C" data-row="11" data-seat="7"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+        </div>
+        <div class="row" data-row="12">
+          <div class="seat sold" data-section="C" data-row="12" data-seat="8"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+        </div>
+      </div>
+      <div class="section section-D" data-section="D">
+        <div class="row" data-row="1">
+          <div class="seat available" data-section="D" data-row="1" data-seat="6"></div>
+          <div class="seat available" data-section="D" data-row="1" data-seat="5"></div>
+          <div class="seat available" data-section="D" data-row="1" data-seat="4"></div>
+          <div class="seat available" data-section="D" data-row="1" data-seat="3"></div>
+          <div class="seat available" data-section="D" data-row="1" data-seat="2"></div>
+          <div class="seat sold" data-section="D" data-row="1" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="2">
+          <div class="seat available" data-section="D" data-row="2" data-seat="6"></div>
+          <div class="seat sold" data-section="D" data-row="2" data-seat="5"></div>
+          <div class="seat available" data-section="D" data-row="2" data-seat="4"></div>
+          <div class="seat available" data-section="D" data-row="2" data-seat="3"></div>
+          <div class="seat available" data-section="D" data-row="2" data-seat="2"></div>
+          <div class="seat available" data-section="D" data-row="2" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="3">
+          <div class="seat available" data-section="D" data-row="3" data-seat="6"></div>
+          <div class="seat available" data-section="D" data-row="3" data-seat="5"></div>
+          <div class="seat available" data-section="D" data-row="3" data-seat="4"></div>
+          <div class="seat available" data-section="D" data-row="3" data-seat="3"></div>
+          <div class="seat available" data-section="D" data-row="3" data-seat="2"></div>
+          <div class="seat available" data-section="D" data-row="3" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="4">
+
+          <div class="seat available" data-section="D" data-row="4" data-seat="6"></div>
+          <div class="seat available" data-section="D" data-row="4" data-seat="5"></div>
+          <div class="seat available" data-section="D" data-row="4" data-seat="4"></div>
+          <div class="seat available" data-section="D" data-row="4" data-seat="3"></div>
+          <div class="seat available" data-section="D" data-row="4" data-seat="2"></div>
+          <div class="seat available" data-section="D" data-row="4" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="5">
+          <div class="seat available" data-section="D" data-row="5" data-seat="6"></div>
+          <div class="seat available" data-section="D" data-row="5" data-seat="5"></div>
+          <div class="seat available" data-section="D" data-row="5" data-seat="4"></div>
+          <div class="seat available" data-section="D" data-row="5" data-seat="3"></div>
+          <div class="seat available" data-section="D" data-row="5" data-seat="2"></div>
+          <div class="seat available" data-section="D" data-row="5" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="6">
+          <div class="seat available" data-section="D" data-row="6" data-seat="6"></div>
+          <div class="seat available" data-section="D" data-row="6" data-seat="5"></div>
+          <div class="seat sold" data-section="D" data-row="6" data-seat="4"></div>
+          <div class="seat available" data-section="D" data-row="6" data-seat="3"></div>
+          <div class="seat sold" data-section="D" data-row="6" data-seat="2"></div>
+          <div class="gap"></div>
+        </div>
+        <div class="row" data-row="7">
+          <div class="seat available" data-section="D" data-row="7" data-seat="6"></div>
+          <div class="seat available" data-section="D" data-row="7" data-seat="5"></div>
+          <div class="seat available" data-section="D" data-row="7" data-seat="4"></div>
+          <div class="seat available" data-section="D" data-row="7" data-seat="3"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+        </div>
+        <div class="row" data-row="8">
+          <div class="seat available" data-section="D" data-row="8" data-seat="6"></div>
+          <div class="seat available" data-section="D" data-row="8" data-seat="5"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+        </div>
+        <div class="row" data-row="9">
+          <div class="seat available" data-section="D" data-row="9" data-seat="6"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+        </div>
+      </div>
+      <div class="section section-E" data-section="E">
+        <div class="row" data-row="1">
+          <div class="seat sold" data-section="E" data-row="1" data-seat="8"></div>
+          <div class="seat available" data-section="E" data-row="1" data-seat="7"></div>
+          <div class="seat available" data-section="E" data-row="1" data-seat="6"></div>
+          <div class="seat available" data-section="E" data-row="1" data-seat="5"></div>
+          <div class="seat available" data-section="E" data-row="1" data-seat="4"></div>
+          <div class="seat available" data-section="E" data-row="1" data-seat="3"></div>
+          <div class="seat available" data-section="E" data-row="1" data-seat="2"></div>
+          <div class="seat available" data-section="E" data-row="1" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="2">
+          <div class="seat available" data-section="E" data-row="2" data-seat="8"></div>
+          <div class="seat available" data-section="E" data-row="2" data-seat="7"></div>
+          <div class="seat available" data-section="E" data-row="2" data-seat="6"></div>
+          <div class="seat available" data-section="E" data-row="2" data-seat="5"></div>
+          <div class="seat available" data-section="E" data-row="2" data-seat="4"></div>
+          <div class="seat available" data-section="E" data-row="2" data-seat="3"></div>
+          <div class="seat sold" data-section="E" data-row="2" data-seat="2"></div>
+          <div class="seat available" data-section="E" data-row="2" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="3">
+          <div class="seat available" data-section="E" data-row="3" data-seat="8"></div>
+          <div class="seat available" data-section="E" data-row="3" data-seat="7"></div>
+          <div class="seat available" data-section="E" data-row="3" data-seat="6"></div>
+          <div class="seat sold" data-section="E" data-row="3" data-seat="5"></div>
+          <div class="seat available" data-section="E" data-row="3" data-seat="4"></div>
+          <div class="seat available" data-section="E" data-row="3" data-seat="3"></div>
+          <div class="seat available" data-section="E" data-row="3" data-seat="2"></div>
+          <div class="seat available" data-section="E" data-row="3" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="4">
+          <div class="seat available" data-section="E" data-row="4" data-seat="8"></div>
+          <div class="seat available" data-section="E" data-row="4" data-seat="7"></div>
+          <div class="seat available" data-section="E" data-row="4" data-seat="6"></div>
+          <div class="seat available" data-section="E" data-row="4" data-seat="5"></div>
+          <div class="seat available" data-section="E" data-row="4" data-seat="4"></div>
+          <div class="seat available" data-section="E" data-row="4" data-seat="3"></div>
+          <div class="seat available" data-section="E" data-row="4" data-seat="2"></div>
+          <div class="gap"></div>
+        </div>
+        <div class="row" data-row="5">
+          <div class="seat available" data-section="E" data-row="5" data-seat="8"></div>
+          <div class="seat available" data-section="E" data-row="5" data-seat="7"></div>
+          <div class="seat available" data-section="E" data-row="5" data-seat="6"></div>
+          <div class="seat available" data-section="E" data-row="5" data-seat="5"></div>
+          <div class="seat available" data-section="E" data-row="5" data-seat="4"></div>
+          <div class="seat available" data-section="E" data-row="5" data-seat="3"></div>
+          <div class="seat sold" data-section="E" data-row="5" data-seat="2"></div>
+          <div class="seat available" data-section="E" data-row="5" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="6">
+          <div class="seat available" data-section="E" data-row="6" data-seat="8"></div>
+          <div class="seat available" data-section="E" data-row="6" data-seat="7"></div>
+          <div class="seat available" data-section="E" data-row="6" data-seat="6"></div>
+          <div class="seat available" data-section="E" data-row="6" data-seat="5"></div>
+          <div class="seat available" data-section="E" data-row="6" data-seat="4"></div>
+          <div class="seat available" data-section="E" data-row="6" data-seat="3"></div>
+          <div class="seat sold" data-section="E" data-row="6" data-seat="2"></div>
+          <div class="gap"></div>
+        </div>
+        <div class="row" data-row="7">
+          <div class="seat available" data-section="E" data-row="7" data-seat="8"></div>
+          <div class="seat available" data-section="E" data-row="7" data-seat="7"></div>
+          <div class="seat sold" data-section="E" data-row="7" data-seat="6"></div>
+          <div class="seat available" data-section="E" data-row="7" data-seat="5"></div>
+          <div class="seat available" data-section="E" data-row="7" data-seat="4"></div>
+          <div class="seat available" data-section="E" data-row="7" data-seat="3"></div>
+          <div class="seat available" data-section="E" data-row="7" data-seat="2"></div>
+          <div class="seat available" data-section="E" data-row="7" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="8">
+          <div class="seat available" data-section="E" data-row="8" data-seat="8"></div>
+          <div class="seat available" data-section="E" data-row="8" data-seat="7"></div>
+          <div class="seat available" data-section="E" data-row="8" data-seat="6"></div>
+          <div class="seat available" data-section="E" data-row="8" data-seat="5"></div>
+          <div class="seat available" data-section="E" data-row="8" data-seat="4"></div>
+          <div class="seat available" data-section="E" data-row="8" data-seat="3"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+        </div>
+        <div class="row" data-row="9">
+          <div class="seat available" data-section="E" data-row="9" data-seat="8"></div>
+          <div class="seat available" data-section="E" data-row="9" data-seat="7"></div>
+          <div class="seat available" data-section="E" data-row="9" data-seat="6"></div>
+          <div class="seat available" data-section="E" data-row="9" data-seat="5"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+        </div>
+        <div class="row" data-row="10">
+          <div class="seat available" data-section="E" data-row="10" data-seat="8"></div>
+          <div class="seat sold" data-section="E" data-row="10" data-seat="7"></div>
+          <div class="seat available" data-section="E" data-row="10" data-seat="6"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+        </div>
+        <div class="row" data-row="11">
+          <div class="seat available" data-section="E" data-row="11" data-seat="8"></div>
+          <div class="seat available" data-section="E" data-row="11" data-seat="7"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+        </div>
+        <div class="row" data-row="12">
+          <div class="seat available" data-section="E" data-row="12" data-seat="8"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+        </div>
+      </div>
+      <div class="section section-F" data-section="F">
+        <div class="row" data-row="1">
+          <div class="gap2"></div>
+          <div class="seat available" data-section="F" data-row="1" data-seat="6"></div>
+          <div class="seat sold" data-section="F" data-row="1" data-seat="5"></div>
+          <div class="seat available" data-section="F" data-row="1" data-seat="4"></div>
+          <div class="seat available" data-section="F" data-row="1" data-seat="3"></div>
+          <div class="seat available" data-section="F" data-row="1" data-seat="2"></div>
+          <div class="seat available" data-section="F" data-row="1" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="2">
+          <div class="gap2"></div>
+          <div class="seat sold" data-section="F" data-row="2" data-seat="6"></div>
+          <div class="seat available" data-section="F" data-row="2" data-seat="5"></div>
+          <div class="seat available" data-section="F" data-row="2" data-seat="4"></div>
+          <div class="seat available" data-section="F" data-row="2" data-seat="3"></div>
+          <div class="seat available" data-section="F" data-row="2" data-seat="2"></div>
+          <div class="seat available" data-section="F" data-row="2" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="3">
+          <div class="gap2"></div>
+          <div class="seat available" data-section="F" data-row="3" data-seat="6"></div>
+          <div class="seat available" data-section="F" data-row="3" data-seat="5"></div>
+          <div class="seat available" data-section="F" data-row="3" data-seat="4"></div>
+          <div class="seat available" data-section="F" data-row="3" data-seat="3"></div>
+          <div class="seat sold" data-section="F" data-row="3" data-seat="2"></div>
+          <div class="seat available" data-section="F" data-row="3" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="4">
+          <div class="seat available" data-section="F" data-row="4" data-seat="8"></div>
+          <div class="seat available" data-section="F" data-row="4" data-seat="7"></div>
+          <div class="seat available" data-section="F" data-row="4" data-seat="6"></div>
+          <div class="seat available" data-section="F" data-row="4" data-seat="5"></div>
+          <div class="seat sold" data-section="F" data-row="4" data-seat="4"></div>
+          <div class="seat available" data-section="F" data-row="4" data-seat="3"></div>
+          <div class="seat available" data-section="F" data-row="4" data-seat="2"></div>
+          <div class="seat available" data-section="F" data-row="4" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="5">
+          <div class="seat available" data-section="F" data-row="5" data-seat="8"></div>
+          <div class="seat available" data-section="F" data-row="5" data-seat="7"></div>
+          <div class="seat available" data-section="F" data-row="5" data-seat="6"></div>
+          <div class="seat available" data-section="F" data-row="5" data-seat="5"></div>
+          <div class="seat available" data-section="F" data-row="5" data-seat="4"></div>
+          <div class="seat available" data-section="F" data-row="5" data-seat="3"></div>
+          <div class="seat available" data-section="F" data-row="5" data-seat="2"></div>
+          <div class="seat sold" data-section="F" data-row="5" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="6">
+          <div class="seat available" data-section="F" data-row="6" data-seat="8"></div>
+          <div class="seat available" data-section="F" data-row="6" data-seat="7"></div>
+          <div class="seat available" data-section="F" data-row="6" data-seat="6"></div>
+          <div class="seat available" data-section="F" data-row="6" data-seat="5"></div>
+          <div class="seat available" data-section="F" data-row="6" data-seat="4"></div>
+          <div class="seat available" data-section="F" data-row="6" data-seat="3"></div>
+          <div class="seat available" data-section="F" data-row="6" data-seat="2"></div>
+          <div class="seat available" data-section="F" data-row="6" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="7">
+          <div class="seat available" data-section="F" data-row="7" data-seat="8"></div>
+          <div class="seat available" data-section="F" data-row="7" data-seat="7"></div>
+          <div class="seat available" data-section="F" data-row="7" data-seat="6"></div>
+          <div class="seat available" data-section="F" data-row="7" data-seat="5"></div>
+          <div class="seat available" data-section="F" data-row="7" data-seat="4"></div>
+          <div class="seat available" data-section="F" data-row="7" data-seat="3"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+        </div>
+        <div class="row" data-row="8">
+          <div class="seat available" data-section="F" data-row="8" data-seat="8"></div>
+          <div class="seat available" data-section="F" data-row="8" data-seat="7"></div>
+          <div class="seat available" data-section="F" data-row="8" data-seat="6"></div>
+          <div class="seat sold" data-section="F" data-row="8" data-seat="5"></div>
+          <div class="seat available" data-section="F" data-row="8" data-seat="4"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+        </div>
+        <div class="row" data-row="9">
+          <div class="seat available" data-section="F" data-row="9" data-seat="8"></div>
+          <div class="seat available" data-section="F" data-row="9" data-seat="7"></div>
+          <div class="seat available" data-section="F" data-row="9" data-seat="6"></div>
+          <div class="seat available" data-section="F" data-row="9" data-seat="5"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+        </div>
+        <div class="row" data-row="10">
+          <div class="seat available" data-section="F" data-row="10" data-seat="8"></div>
+          <div class="seat available" data-section="F" data-row="10" data-seat="7"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+        </div>
+        <div class="row" data-row="11">
+          <div class="seat available" data-section="F" data-row="11" data-seat="8"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+          <div class="gap"></div>
+        </div>
+      </div>
+      <div class="section section-G" data-section="G">
+        <div class="row" data-row="1">
+          <div class="seat sold" data-section="G" data-row="1" data-seat="8"></div>
+          <div class="seat available" data-section="G" data-row="1" data-seat="7"></div>
+          <div class="seat available" data-section="G" data-row="1" data-seat="6"></div>
+          <div class="seat available" data-section="G" data-row="1" data-seat="5"></div>
+          <div class="seat available" data-section="G" data-row="1" data-seat="4"></div>
+          <div class="seat available" data-section="G" data-row="1" data-seat="3"></div>
+          <div class="seat available" data-section="G" data-row="1" data-seat="2"></div>
+          <div class="seat available" data-section="G" data-row="1" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="2">
+          <div class="seat available" data-section="G" data-row="2" data-seat="8"></div>
+          <div class="seat available" data-section="G" data-row="2" data-seat="7"></div>
+          <div class="seat available" data-section="G" data-row="2" data-seat="6"></div>
+          <div class="seat available" data-section="G" data-row="2" data-seat="5"></div>
+          <div class="seat available" data-section="G" data-row="2" data-seat="4"></div>
+          <div class="seat available" data-section="G" data-row="2" data-seat="3"></div>
+          <div class="seat available" data-section="G" data-row="2" data-seat="2"></div>
+          <div class="seat sold" data-section="G" data-row="2" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="3">
+          <div class="seat available" data-section="G" data-row="3" data-seat="8"></div>
+          <div class="seat sold" data-section="G" data-row="3" data-seat="7"></div>
+          <div class="seat available" data-section="G" data-row="3" data-seat="6"></div>
+          <div class="seat available" data-section="G" data-row="3" data-seat="5"></div>
+          <div class="seat available" data-section="G" data-row="3" data-seat="4"></div>
+          <div class="seat available" data-section="G" data-row="3" data-seat="3"></div>
+          <div class="seat available" data-section="G" data-row="3" data-seat="2"></div>
+          <div class="seat available" data-section="G" data-row="3" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="4">
+          <div class="seat available" data-section="G" data-row="4" data-seat="8"></div>
+          <div class="seat available" data-section="G" data-row="4" data-seat="7"></div>
+          <div class="seat available" data-section="G" data-row="4" data-seat="6"></div>
+          <div class="seat available" data-section="G" data-row="4" data-seat="5"></div>
+          <div class="seat available" data-section="G" data-row="4" data-seat="4"></div>
+          <div class="seat available" data-section="G" data-row="4" data-seat="3"></div>
+          <div class="seat available" data-section="G" data-row="4" data-seat="2"></div>
+          <div class="seat available" data-section="G" data-row="4" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="5">
+          <div class="seat available" data-section="G" data-row="5" data-seat="8"></div>
+          <div class="seat available" data-section="G" data-row="5" data-seat="7"></div>
+          <div class="seat available" data-section="G" data-row="5" data-seat="6"></div>
+          <div class="seat available" data-section="G" data-row="5" data-seat="5"></div>
+          <div class="seat available" data-section="G" data-row="5" data-seat="4"></div>
+          <div class="seat available" data-section="G" data-row="5" data-seat="3"></div>
+          <div class="seat available" data-section="G" data-row="5" data-seat="2"></div>
+          <div class="seat available" data-section="G" data-row="5" data-seat="1"></div>
+        </div>
+        <div class="row" data-row="6">
+          <div class="seat available" data-section="G" data-row="6" data-seat="8"></div>
+          <div class="seat available" data-section="G" data-row="6" data-seat="7"></div>
+          <div class="seat available" data-section="G" data-row="6" data-seat="6"></div>
+          <div class="seat sold" data-section="G" data-row="6" data-seat="5"></div>
+          <div class="seat available" data-section="G" data-row="6" data-seat="4"></div>
+          <div class="seat available" data-section="G" data-row="6" data-seat="3"></div>
+          <div class="seat available" data-section="G" data-row="6" data-seat="2"></div>
+          <div class="seat available" data-section="G" data-row="6" data-seat="1"></div>
+        </div>
+      </div>
+
+
+
+    </div>
+    <div id="reference-image">
+    </div>
+    <div class="selection-info">
+      <h3>已選擇座位</h3>
+      <div class="selected-seats">
+        <p class="none-selected">尚未選取座位</p>
+      </div>
+      <div class="summary"></div>
+      <button class="next-btn" onclick="finishBooking()">下一步</button>
+    </div>
+  </div>
+  <script>
+    // Price per ticket
+    const ticketPrice = 20000;
+    // Utility: update selection info panel
+    function updateSelectionInfo() {
+      const selectedSeats = document.querySelectorAll('.seat.selected');
+      const selectedSeatsContainer = document.querySelector('.selected-seats');
+      const summaryDiv = document.querySelector('.summary');
+      const nextButton = document.querySelector('.next-btn');
+      if (selectedSeats.length === 0) {
+        // No seats selected
+        selectedSeatsContainer.innerHTML = '<p class="none-selected">尚未選取座位</p>';
+        summaryDiv.textContent = '';
+        nextButton.disabled = true;
+      } else {
+        // Build list of selected seat info lines
+        let seatInfoHtml = '';
+        selectedSeats.forEach(seat => {
+          const sec = seat.getAttribute('data-section');
+          const row = seat.getAttribute('data-row');
+          const num = seat.getAttribute('data-seat');
+          seatInfoHtml += '<p>' + sec + '區' + row + '排' + num + '號 - ₩' + ticketPrice + '</p>';
+        });
+        selectedSeatsContainer.innerHTML = seatInfoHtml;
+        // Calculate total
+        const totalPrice = selectedSeats.length * ticketPrice;
+        summaryDiv.textContent = '張數: ' + selectedSeats.length + '，總價: ₩' + totalPrice;
+        nextButton.disabled = false;
+      }
+    }
+    // Attach click event to all seats
+    document.querySelectorAll('.seat').forEach(seat => {
+      seat.addEventListener('click', () => {
+        // if seat is sold, do nothing
+        if (seat.classList.contains('sold')) {
+          return;
+        }
+        // if already selected, deselect it
+        if (seat.classList.contains('selected')) {
+          seat.classList.remove('selected');
+          seat.classList.add('available');
+        } else {
+          // if not selected, and selection limit not reached
+          const currentlySelected = document.querySelectorAll('.seat.selected').length;
+          if (currentlySelected >= 2) {
+            alert('每人最多可選 2 張票');
+            return;
+          }
+          seat.classList.remove('available');
+          seat.classList.add('selected');
+        }
+        updateSelectionInfo();
+      });
+    });
+    // Next button click event
+    function finishBooking() {
+      window.opener.postMessage('doneBooking', '*');
+      window.close(); // 關閉自己
+    }
+
+
+    window.onload = function () {
+      const seats = document.querySelectorAll('.seat');
+
+      seats.forEach(seat => {
+        if (seat.classList.contains('gap') || seat.classList.contains('gap2')) return;
+
+        const random = Math.random(); // 0~1 隨機數
+        if (random < 0.3) {
+          seat.classList.remove('available');
+          seat.classList.add('sold');
+        } else {
+          seat.classList.remove('sold');
+          seat.classList.add('available');
+        }
+      });
+    };
+
+  </script>
+</body>
+
+</html>
